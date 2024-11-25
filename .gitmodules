@@ -1,3 +1,6 @@
 [submodule "lib/MyESP_OTA"]
 	path = lib/MyESP_OTA
 	url = https://github.com/LucaDal/MyESP_OTA.git
+[submodule "lib/MyESPAuthManager"]
+	path = lib/MyESPAuthManager
+	url = https://github.com/LucaDal/MyESPAuthManager.git

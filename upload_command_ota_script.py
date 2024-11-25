@@ -2,7 +2,7 @@ import json
 from requests import get, post
 import sys
 
-IP = "IP_ADDRESS"
+IP = "lucadalessandro.freeddns.org"
 
 def get_version_from_TOKEN(TOKEN):
     data_TOKEN = get("https://{}/ota/api/get/version/{}".format(IP,TOKEN)).text
