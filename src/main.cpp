@@ -4,8 +4,9 @@
 #include "secret_data.h"
 #include "AuthenticationManager.h"
 #include <Wire.h>
-#include "DFRobot_SHT20.h"
+//#include "DFRobot_SHT20.h"
 #include "PubSubClient.h"
+#include "SHTSensor.h"
 
 #define DEEPSLEEP 300e6 //5 minuti
 #define UPDATE_TIME 300000 //5 minuti
@@ -15,13 +16,13 @@ JsonDocument doc;
 
 const char * mqtt_username;
 const char * mqtt_password;
-const char *mqtt_topic = "domotica/mirandola/camera/temp_igro";
+String mqtt_topic = "domotica/mirandola/camera/temp_igro/";
 const int mqtt_port = 1883;
 
 WiFiClient espClient;
 PubSubClient mqtt_client(espClient);
 
-DFRobot_SHT20 sht20;
+SHTSensor sht;
 
 unsigned long update_time = 0;
 
@@ -33,7 +34,7 @@ void connectToMQTTBroker() {
       String client_id = "esp8266-" + String(WiFi.macAddress());
       if (mqtt_client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
           Serial.println("Connected to MQTT broker");
-          mqtt_client.subscribe(mqtt_topic);
+          mqtt_client.subscribe(mqtt_topic.c_str());
           break;
       } else {
           Serial.println("Failed connecting - retrying in 5 seconds");
@@ -49,9 +50,10 @@ void update(){
 
   if(millis() > update_time){
     update_time = millis() + UPDATE_TIME;
-    doc["temp"] = String(sht20.readTemperature(),1);
-    doc["umid"] = String(sht20.readHumidity(),0); 
-    mqtt_client.publish(mqtt_topic,doc.as<String>().c_str());
+    sht.readSample();
+    doc["temp"] = String(sht.getTemperature(),1);
+    doc["umid"] = String(sht.getHumidity(),0); 
+    mqtt_client.publish(mqtt_topic.c_str(),doc.as<String>().c_str());
     delay(200);
     if(DEEPSLEEP > 0)
        ESP.deepSleep(DEEPSLEEP);
@@ -61,12 +63,13 @@ void update(){
 void setup() {
 
   Wire.begin(2, 0);  //sda - scl
-  sht20.initSHT20();
-
+  sht.init();
   AuthManger am((size_t)0, (size_t)512);
-  //am.writeUsernameAndPassword("termo_igro_01", "admin");
+  
   mqtt_username = am.getUserame();
   mqtt_password = am.getPassword();
+ 
+  mqtt_topic.concat(mqtt_username);
 
   WiFiManager wifiManager;
   wifiManager.setConfigPortalTimeout(120);
